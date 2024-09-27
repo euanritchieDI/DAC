@@ -28,7 +28,9 @@ attrfunk = function(x){
 	keyIds  = obsKeyValues %>% xml_attr("id")
 	keyValues = obsKeyValues %>% xml_attr("value")
 	value = obsChildren[2] %>% xml_attr("value")
-	return(rbind(data.frame("Var"=keyIds,"value"=keyValues),c("Value",value)))
+	keyIds = c(keyIds, "Value")
+	keyValues = c(keyValues, value)
+	return(data.frame("Var"=keyIds,"value"=keyValues))
 }
 ### ------------------------------------------------------------------
 # GET ACTUAL DATA
