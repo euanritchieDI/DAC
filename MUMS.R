@@ -1,7 +1,7 @@
-library(tidyverse)
-library(xml2)
-library(data.table)
-library(janitor)
+list.of.packages <- c("data.table", "janitor", "tidyverse", "xml2")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+lapply(list.of.packages, require, character.only=T)
 
 ### ------------------------------------------------------------------
 # GET NAMES FOR THE CHANNEL CODES
@@ -23,10 +23,14 @@ namefunk = function(x,name){
 	return(x)
 }
 attrfunk = function(x){
-	Var  = (x %>% xml_children())[1] %>% xml_children() %>% xml_attr("id")
-	val1 = (x %>% xml_children())[1] %>% xml_children() %>% xml_attr("value")
-	val2 = (x %>% xml_children())[2] %>% xml_attr("value")
-	return(rbind(data.frame("Var"=Var,"value"=val1),c("Value",val2)))
+  obsChildren = (x %>% xml_children())
+  obsKeyValues = obsChildren[1] %>% xml_children()
+	keyIds  = obsKeyValues %>% xml_attr("id")
+	keyValues = obsKeyValues %>% xml_attr("value")
+	value = obsChildren[2] %>% xml_attr("value")
+	keyIds = c(keyIds, "Value")
+	keyValues = c(keyValues, value)
+	return(data.frame("Var"=keyIds,"value"=keyValues))
 }
 ### ------------------------------------------------------------------
 # GET ACTUAL DATA
@@ -35,7 +39,7 @@ attrfunk = function(x){
 #D = disbursements; C = commitments	
 
 
-MUMS = function(donors,Start,End,core=T,prices="current",disb=T,channel=""){
+MUMS = function(donors="",Start="2011",End="2022",core=T,prices="current",disb=T,channel=""){
 	donors = paste(donors,collapse="+")
 	prices = ifelse(prices=="current","V","Q")
 	disb   = ifelse(disb==T,"D","C")
@@ -60,10 +64,6 @@ MUMS = function(donors,Start,End,core=T,prices="current",disb=T,channel=""){
 	dat = Map(namefunk, dat, 1:length(dat))
 	dat = as.data.frame(rbindlist(dat)) %>% pivot_wider(names_from=Var,values_from=value)
 	dat = remove_constant(dat)
-	names(dat)[names(dat)=="TIME_PERIOD"] = "year"
+	setnames(dat, "TIME_PERIOD", "year")
 	return(dat)
 }
-
-
-
-
